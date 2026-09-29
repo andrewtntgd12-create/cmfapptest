@@ -1,0 +1,26 @@
+name: Build IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: Build (unsigned)
+        run: |
+          xcodebuild -project CMFBattery.xcodeproj -scheme CMFBattery \
+            -configuration Release -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - name: Package IPA
+        run: |
+          mkdir Payload
+          cp -r build/Build/Products/Release-iphoneos/CMFBattery.app Payload/
+          zip -r CMFBattery.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CMFBattery-ipa
+          path: CMFBattery.ipa
